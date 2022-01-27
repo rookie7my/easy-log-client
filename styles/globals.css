@@ -3,3 +3,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 }
+
+:root {
+  --primary-color: #0079F7;
+  --secondary-color: #686DE6;
+  --red-color: #E34307;
+}
