@@ -1,10 +1,10 @@
-import NavBar from "../components/NavBar";
+import Header from "../components/Header";
 import KeywordBox from "../components/KeywordBox";
 
 const Home = () => {
   return (
     <>
-      <NavBar />
+      <Header />
       <KeywordBox />
     </>
   );

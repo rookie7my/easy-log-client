@@ -1,10 +1,10 @@
-import NavBar from "../components/NavBar";
+import Header from "../components/Header";
 import SignUpForm from "../components/SignUpForm";
 
 const SignUp = () => {
   return (
     <>
-      <NavBar />
+      <Header />
       <SignUpForm />
     </>
   );

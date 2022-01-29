@@ -1,16 +1,16 @@
 import Image from "next/image";
 import styles from "./styles.module.css";
 
-const NavBar = () => {
+const Header = () => {
   return (
-    <nav className={styles.NavBar}>
+    <header className={styles.Header}>
       <div className={styles.logo}>
         <Image src="/logo.png" height={32} width={32} />
-        <span className={styles.title}>Easy Log</span>
+        <h1 className={styles.title}>Easy Log</h1>
       </div>
       <button>로그인</button>
-    </nav>
+    </header>
   );
 };
 
-export default NavBar;
+export default Header;
