@@ -1,7 +1,15 @@
+import {useEffect, useRef} from 'react';
+import PropTypes from 'prop-types';
 import styles from './styles.module.css';
-import ModalPortal from "./ModalPortal";
+import ModalPortal from './ModalPortal';
+import { AiOutlineClose } from 'react-icons/ai';
 
 const Modal = ({onModalClosed, title, content}) => {
+  const closeBtn = useRef();
+  useEffect(() => {
+    closeBtn.current.focus();
+  }, []);
+
   return (
     <ModalPortal>
       <div className={styles.dimmer} onClick={onModalClosed} />
@@ -10,7 +18,10 @@ const Modal = ({onModalClosed, title, content}) => {
           <div className={styles.title}>
             {title}
           </div>
-          <button className={styles.closeBtn} onClick={onModalClosed}>Close</button>
+          <button ref={closeBtn} className={styles.closeBtn}
+                  onClick={onModalClosed}>
+            <AiOutlineClose />
+          </button>
         </header>
         <section className={styles.content}>
           {content}
@@ -18,6 +29,12 @@ const Modal = ({onModalClosed, title, content}) => {
       </div>
     </ModalPortal>
   );
+};
+
+Modal.propTypes = {
+  title: PropTypes.string.isRequired,
+  content: PropTypes.string.isRequired,
+  onModalClosed: PropTypes.func.isRequired,
 };
 
 export default Modal;
