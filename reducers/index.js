@@ -1,7 +1,10 @@
 import { HYDRATE } from 'next-redux-wrapper';
 import { combineReducers } from '@reduxjs/toolkit';
+import currentUserReducer from './currentUserSlice';
 
-const combinedReducer = combineReducers({});
+const combinedReducer = combineReducers({
+  currentUser: currentUserReducer,
+});
 
 const rootReducer = (state, action) => {
   switch (action.type) {
