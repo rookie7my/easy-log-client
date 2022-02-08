@@ -1,8 +1,6 @@
 import { createAsyncThunk, createSlice, nanoid } from '@reduxjs/toolkit';
 
 const initialState = {
-  loginRequestStatus: 'idle',
-  loginRequestError: null,
   data: null,
 };
 
@@ -37,16 +35,8 @@ const currentUserSlice = createSlice({
   reducers: {},
   extraReducers(builder) {
     builder
-      .addCase(login.pending, (state, action) => {
-        state.loginRequestStatus = 'loading';
-      })
       .addCase(login.fulfilled, (state, action) => {
-        state.loginRequestStatus = 'succeeded';
         state.data = action.payload;
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.loginRequestStatus = 'failed';
-        state.loginRequestError = action.error.message;
       })
   }
 });

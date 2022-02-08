@@ -1,14 +1,17 @@
 import { useCallback, useState } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import styles from './styles.module.css';
 import { login } from '../../reducers/currentUserSlice';
 import FormMessage from "../FormMessage";
 import Modal from '../Modal';
 
 const LoginForm = () => {
-  const loginRequestStatus = useSelector(state => state.currentUser.loginRequestStatus);
+  const router = useRouter();
   const dispatch = useDispatch();
+
+  const [loginRequestStatus, setLoginRequestStatus] = useState('idle');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,7 +47,7 @@ const LoginForm = () => {
     }
   }, [errorMessage]);
 
-  const onFormSubmitted = useCallback((e) => {
+  const onFormSubmitted = useCallback(async (e) => {
     e.preventDefault();
     if(!email) {
       setErrorMessage({
@@ -62,10 +65,23 @@ const LoginForm = () => {
       setErrorMessageModal(true);
       return;
     }
-    if(loginRequestStatus === 'loading' || loginRequestStatus === 'succeeded') {
+    if(loginRequestStatus === 'loading') {
       return;
     }
-    dispatch(login({email, password}));
+    try {
+      setLoginRequestStatus('loading');
+      await dispatch(login({email, password})).unwrap();
+      console.log('logged in successfully');
+      router.push('/');
+    } catch(err) {
+      setErrorMessage({
+        field: 'all',
+        errorMessage: '이메일 또는 비밀번호가 유효하지 않습니다'
+      });
+      setErrorMessageModal(true);
+    } finally {
+      setLoginRequestStatus('idle');
+    }
   }, [email, password, loginRequestStatus, dispatch]);
 
   return (
