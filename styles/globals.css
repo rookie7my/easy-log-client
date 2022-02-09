@@ -11,3 +11,7 @@ body {
   --light-gray-color: #CBCBCB;
   --gray-color: #747474;
 }
+
+a {
+  text-decoration: none;
+}

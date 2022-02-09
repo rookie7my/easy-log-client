@@ -15,12 +15,10 @@
     font-size: 24px;
     font-weight: bold;
     margin-left: 8px;
+    color: black;
 }
 
-.Header button {
-    outline: none;
-    border: none;
-    cursor: pointer;
+.Header .loginBtn {
     font-size: 16px;
     padding: 8px;
     border-radius: 4px;
