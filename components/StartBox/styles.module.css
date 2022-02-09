@@ -1,0 +1,21 @@
+.StartBox {
+  margin: 24px 16px;
+  padding: 24px 8px;
+  text-align: center;
+  background: var(--secondary-color);
+  border-radius: 8px;
+}
+
+.content {
+  font-size: 20px;
+  color: white;
+  margin-bottom: 24px;
+}
+
+.signUpBtn {
+  display: inline-block;
+  color: white;
+  background-color: var(--primary-color);
+  padding: 8px;
+  border-radius: 4px;
+}
