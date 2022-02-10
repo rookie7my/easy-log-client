@@ -1,0 +1,52 @@
+.Dropdown {
+  position: relative;
+}
+
+.menuList {
+  position: absolute;
+  top: 50px;
+  border: 1px solid var(--gray-color);
+  border-radius: 8px;
+  width: 140px;
+  text-align: end;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-20px);
+  transition: transform 300ms ease, opacity 300ms ease, visibility 300ms ease;
+}
+
+.menuList.active {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.menuItem {
+  font-size: 14px;
+  color: var(--gray-color);
+  padding: 8px;
+}
+
+.menuItem button {
+  outline: 0;
+  border: 0;
+  cursor: pointer;
+  background-color: white;
+}
+
+.menuItem button:hover {
+  color: var(--primary-color);
+}
+
+.menuItem button span {
+  margin-right: 8px;
+}
+
+.toggleBtn {
+  outline: 0;
+  border: 0;
+  background-color: white;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--gray-color);
+}
