@@ -1,8 +1,12 @@
+import { useSelector } from 'react-redux';
 import Image from 'next/image';
 import Link from 'next/link'
 import styles from './styles.module.css';
+import Dropdown from '../Dropdown';
 
 const Header = () => {
+  const currentUser = useSelector(state => state.currentUser.data);
+
   return (
     <header className={styles.Header}>
       <div className={styles.logo}>
@@ -13,9 +17,14 @@ const Header = () => {
           </Link>
         </h1>
       </div>
-      <Link href="/login">
-        <a className={styles.loginBtn}>로그인</a>
-      </Link>
+      {!currentUser &&
+        <Link href="/login">
+          <a className={styles.loginBtn}>로그인</a>
+        </Link>
+      }
+      {currentUser &&
+        <Dropdown name={currentUser.username}/>
+      }
     </header>
   );
 };
