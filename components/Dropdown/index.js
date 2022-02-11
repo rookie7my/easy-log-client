@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BsGear, BsPencil, BsBoxArrowRight } from 'react-icons/bs';
+import { BsGear, BsPencil } from 'react-icons/bs';
 import styles from './styles.module.css';
+import LogoutButton from '../LogoutButton';
 
 const Dropdown = ({name}) => {
   const [isActive, setIsActive] = useState(false);
@@ -34,22 +35,19 @@ const Dropdown = ({name}) => {
       <nav className={`${styles.menuList} ${isActive? styles.active : ''}`}>
         <ul>
           <li className={styles.menuItem}>
-            <button>
+            <button className={styles.menuBtn}>
               <span>계정 관리</span>
               <BsGear />
             </button>
           </li>
           <li className={styles.menuItem}>
-            <button>
+            <button className={styles.menuBtn}>
               <span>글쓰기</span>
               <BsPencil />
             </button>
           </li>
           <li className={styles.menuItem}>
-            <button>
-              <span>로그아웃</span>
-              <BsBoxArrowRight />
-            </button>
+            <LogoutButton />
           </li>
         </ul>
       </nav>

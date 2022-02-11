@@ -10,7 +10,6 @@
   border: 1px solid var(--gray-color);
   border-radius: 8px;
   width: 120px;
-  text-align: end;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-20px);
@@ -29,18 +28,21 @@
   padding: 8px;
 }
 
-.menuItem button {
+.menuBtn {
   outline: 0;
   border: 0;
   cursor: pointer;
   background-color: transparent;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.menuItem button:hover {
+.menuBtn:hover {
   color: var(--primary-color);
 }
 
-.menuItem button span {
+.menuBtn span {
   margin-right: 8px;
 }
 
