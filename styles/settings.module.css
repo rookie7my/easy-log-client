@@ -1,0 +1,40 @@
+.Settings {
+  margin: 16px 16px;
+}
+
+.title {
+  font-size: 1.75rem;
+  margin-bottom: 16px;
+}
+
+.setting-group {
+  padding: 16px 8px;
+}
+
+.setting-group:not(:last-child) {
+  border-bottom: 1px solid var(--gray-color);
+}
+
+.setting-group .subtitle {
+  font-size: 1.25rem;
+  margin-bottom: 20px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.menu-item button {
+  outline: 0;
+  border: 0;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.menu-item button:hover {
+  color: var(--primary-color);
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { BsGear, BsPencil } from 'react-icons/bs';
 import styles from './styles.module.css';
 import LogoutButton from '../LogoutButton';
@@ -35,10 +36,14 @@ const Dropdown = ({name}) => {
       <nav className={`${styles.menuList} ${isActive? styles.active : ''}`}>
         <ul>
           <li className={styles.menuItem}>
-            <button className={styles.menuBtn}>
-              <span>계정 관리</span>
-              <BsGear />
-            </button>
+            <Link href='/settings'>
+              <a>
+                <button className={styles.menuBtn}>
+                  <span>계정 관리</span>
+                  <BsGear />
+                </button>
+              </a>
+            </Link>
           </li>
           <li className={styles.menuItem}>
             <button className={styles.menuBtn}>
