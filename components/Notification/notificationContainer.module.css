@@ -1,0 +1,10 @@
+.notificationContainer {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 320px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+}
