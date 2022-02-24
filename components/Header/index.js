@@ -1,11 +1,18 @@
-import { useSelector } from 'react-redux';
+import { useQuery } from 'react-query';
+import axios from 'axios';
 import Image from 'next/image';
 import Link from 'next/link'
 import styles from './styles.module.css';
 import Dropdown from '../Dropdown';
 
 const Header = () => {
-  const currentUser = useSelector(state => state.currentUser.data);
+  const { data: currentUser, isLoading, isError } = useQuery(
+    'currentUser',
+    async () => {
+      const response = await axios.get('/api/currentUser');
+      return response.data;
+    }
+  );
 
   return (
     <header className={styles.Header}>
@@ -17,13 +24,11 @@ const Header = () => {
           </Link>
         </h1>
       </div>
-      {!currentUser &&
+      {(isLoading || isError || !currentUser.isLoggedIn)? (
         <Link href="/login">
           <a className={styles.loginBtn}>로그인</a>
         </Link>
-      }
-      {currentUser &&
-        <Dropdown name={currentUser.username}/>
+      ): (<Dropdown name={currentUser.username} />)
       }
     </header>
   );
