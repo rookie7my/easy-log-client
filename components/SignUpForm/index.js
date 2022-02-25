@@ -1,7 +1,10 @@
+import styles from './styles.module.css';
+
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
+import axios from 'axios';
 import { useRouter } from 'next/router';
-import styles from './styles.module.css';
+
 import FormMessage from '../FormMessage';
 import Modal from '../Modal';
 
@@ -126,7 +129,7 @@ const SignUpForm = () => {
     }
   }, [errorMessage]);
 
-  const onFormSubmitted = useCallback((e) => {
+  const onFormSubmitted = useCallback(async (e) => {
     console.log('[signUpForm submit event]');
     e.preventDefault();
     let errorMessage = getErrorMessageFromValidationResults(
@@ -151,9 +154,17 @@ const SignUpForm = () => {
       setErrorMessage(errorMessage);
       return;
     }
-    console.log('form submitted successfully');
-    router.push('/');
+    try {
+      const response = await axios.post('/api/users', {
+        username, email, password
+      });
+      router.push('/');
+    } catch(error) {
+      console.error(error);
+    }
   }, [
+    username,
+    email,
     password,
     passwordCheck,
     usernameValidationResult,

@@ -21,4 +21,11 @@ export const handlers = [
       })
     );
   }),
+  rest.post('/api/users', (req, res, ctx) => {
+    const { username, email, password } = req.body;
+    localStorage.setItem(email, JSON.stringify({username, email, password}));
+    return res(
+      ctx.status(201)
+    );
+  })
 ];
