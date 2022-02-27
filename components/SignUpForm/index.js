@@ -73,17 +73,18 @@ const emptyErrorMessage = {
 const SignUpForm = () => {
   const router = useRouter();
 
-  const [username, setUsername] = useState('');
-  const [usernameValidationResult, setUsernameValidationResult] = useState(getValidationResult('username'));
-
-  const [email, setEmail] = useState('');
-  const [emailValidationResult, setEmailValidationResult] = useState(getValidationResult('email'));
-
-  const [password, setPassword] = useState('');
-  const [passwordValidationResult, setPasswordValidationResult] = useState(getValidationResult('password'));
-
-  const [passwordCheck, setPasswordCheck] = useState('');
-  const [passwordCheckValidationResult, setPasswordCheckValidationResult] = useState(getValidationResult('passwordCheck'));
+  const [fieldValues, setFieldValues] = useState({
+    username: '',
+    email: '',
+    password: '',
+    passwordCheck: ''
+  });
+  const [validationResults, setValidationResults] = useState({
+    username: getValidationResult('username'),
+    email: getValidationResult('email'),
+    password: getValidationResult('password'),
+    passwordCheck: getValidationResult('passwordCheck'),
+  });
 
   const [errorMessageModal, setErrorMessageModal] = useState(false);
 
@@ -93,65 +94,38 @@ const SignUpForm = () => {
     setErrorMessageModal(false);
   }, []);
 
-  const onUsernameChanged = useCallback((e) => {
-    const {value, validity} = e.target;
-    setUsername(value);
-    setUsernameValidationResult(getValidationResult('username', validity));
+  const onFieldValueChanged = useCallback(e => {
+    const {name: fieldName, value, validity} = e.target;
+    setFieldValues({
+      ...fieldValues,
+      [fieldName]: value
+    });
+    setValidationResults({
+      ...validationResults,
+      [fieldName]: getValidationResult(fieldName, validity)
+    });
     if(errorMessage.field || errorMessage.errorMessage) {
       setErrorMessage(emptyErrorMessage);
     }
-  }, [errorMessage]);
-
-  const onEmailChanged = useCallback((e) => {
-    const {value, validity} = e.target;
-    setEmail(value);
-    setEmailValidationResult(getValidationResult('email', validity));
-    if(errorMessage.field || errorMessage.errorMessage) {
-      setErrorMessage(emptyErrorMessage);
-    }
-  }, [errorMessage]);
-
-  const onPasswordChanged = useCallback((e) => {
-    const {value, validity} = e.target;
-    setPassword(value);
-    setPasswordValidationResult(getValidationResult('password', validity));
-    if(errorMessage.field || errorMessage.errorMessage) {
-      setErrorMessage(emptyErrorMessage);
-    }
-  }, [errorMessage]);
-
-  const onPasswordCheckChanged = useCallback((e) => {
-    const {value, validity} = e.target;
-    setPasswordCheck(value);
-    setPasswordCheckValidationResult(getValidationResult('passwordCheck', validity));
-    if(errorMessage.field || errorMessage.errorMessage) {
-      setErrorMessage(emptyErrorMessage);
-    }
-  }, [errorMessage]);
+  }, [fieldValues, validationResults, errorMessage]);
 
   const onFormSubmitted = useCallback(async (e) => {
     console.log('[signUpForm submit event]');
     e.preventDefault();
-    let errorMessage = getErrorMessageFromValidationResults(
-      {
-        'username': usernameValidationResult,
-        'email': emailValidationResult,
-        'password': passwordValidationResult,
-        'passwordCheck': passwordCheckValidationResult
-      }
-    );
-    if(errorMessage) {
+    let displayedErrorMessage = getErrorMessageFromValidationResults(validationResults);
+    if(displayedErrorMessage) {
       setErrorMessageModal(true);
-      setErrorMessage(errorMessage);
+      setErrorMessage(displayedErrorMessage);
       return;
     }
+    const { username, email, password, passwordCheck } = fieldValues;
     if(password !== passwordCheck) {
-      errorMessage = {
+      displayedErrorMessage = {
         field: 'passwordCheck',
         errorMessage: '비밀번호와 비밀번호 확인이 일치하지 않습니다'
       };
       setErrorMessageModal(true);
-      setErrorMessage(errorMessage);
+      setErrorMessage(displayedErrorMessage);
       return;
     }
     try {
@@ -162,16 +136,7 @@ const SignUpForm = () => {
     } catch(error) {
       console.error(error);
     }
-  }, [
-    username,
-    email,
-    password,
-    passwordCheck,
-    usernameValidationResult,
-    emailValidationResult,
-    passwordValidationResult,
-    passwordCheckValidationResult
-  ]);
+  }, [fieldValues, validationResults, router]);
 
   return (
     <form noValidate className={styles.SignUpForm} onSubmit={onFormSubmitted}>
@@ -183,8 +148,8 @@ const SignUpForm = () => {
       </div>
       <div className={styles.item}>
         <label htmlFor="user-name">유저 이름</label>
-        <input type="text" id="user-name" name="username" value={username} placeholder="유저 이름"
-               onChange={onUsernameChanged}
+        <input type="text" id="user-name" name="username" value={fieldValues.username} placeholder="유저 이름"
+               onChange={onFieldValueChanged}
                required minLength={2} maxLength={30}
                pattern="^[ㄱ-ㅎ가-힣\w-]+$"
         />
@@ -196,8 +161,8 @@ const SignUpForm = () => {
       </div>
       <div className={styles.item}>
         <label htmlFor="user-email">이메일</label>
-        <input type="email" id="user-email" name="email" value={email} placeholder="example@easylog.com"
-               onChange={onEmailChanged}
+        <input type="email" id="user-email" name="email" value={fieldValues.email} placeholder="example@easylog.com"
+               onChange={onFieldValueChanged}
                required
         />
         {errorMessage.field === 'email' &&
@@ -208,8 +173,8 @@ const SignUpForm = () => {
       </div>
       <div className={styles.item}>
         <label htmlFor="user-password">비밀번호</label>
-        <input type="password" id="user-password" name="password" value={password} placeholder="비밀번호"
-               onChange={onPasswordChanged}
+        <input type="password" id="user-password" name="password" value={fieldValues.password} placeholder="비밀번호"
+               onChange={onFieldValueChanged}
                required pattern="^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).+$"
                minLength={8} maxLength={32}
         />
@@ -222,7 +187,7 @@ const SignUpForm = () => {
       <div className={styles.item}>
         <label htmlFor="user-password-check">비밀번호 확인</label>
         <input type="password" id="user-password-check" name="passwordCheck" placeholder="비밀번호 확인"
-               value={passwordCheck} onChange={onPasswordCheckChanged}
+               value={fieldValues.passwordCheck} onChange={onFieldValueChanged}
                required />
         {errorMessage.field === 'passwordCheck' &&
           <FormMessage isActive>
