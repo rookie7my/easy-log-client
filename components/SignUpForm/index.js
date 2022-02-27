@@ -7,125 +7,68 @@ import { useRouter } from 'next/router';
 
 import FormMessage from '../FormMessage';
 import Modal from '../Modal';
-
-const ERROR_TYPE = Object.freeze({
-  PATTERN_MISMATCH: 'patternMismatch',
-  TOO_LONG: 'tooLong',
-  TOO_SHORT: 'tooShort',
-  TYPE_MISMATCH: 'typeMismatch',
-  VALUE_MISSING: 'valueMissing',
-});
+import useValidatedFormFields, { FORM_FIELD_ERROR_TYPE } from '../../hooks/useValidatedFormFields';
 
 const errorMessages = Object.freeze({
   username: {
-    [ERROR_TYPE.VALUE_MISSING]: '유저 이름을 입력해주세요',
-    [ERROR_TYPE.TOO_SHORT]: '유저 이름을 2자 이상 30자 이하로 입력해주세요',
-    [ERROR_TYPE.TOO_LONG]: '유저 이름을 2자 이상 30자 이하로 입력해주세요',
-    [ERROR_TYPE.PATTERN_MISMATCH]: '유저 이름을 영문 대소문자/숫자/한글/언더바(_)/하이픈(-)만을 이용해 입력해주세요'
+    [FORM_FIELD_ERROR_TYPE.VALUE_MISSING]: '유저 이름을 입력해주세요',
+    [FORM_FIELD_ERROR_TYPE.TOO_SHORT]: '유저 이름을 2자 이상 30자 이하로 입력해주세요',
+    [FORM_FIELD_ERROR_TYPE.TOO_LONG]: '유저 이름을 2자 이상 30자 이하로 입력해주세요',
+    [FORM_FIELD_ERROR_TYPE.PATTERN_MISMATCH]: '유저 이름을 영문 대소문자/숫자/한글/언더바(_)/하이픈(-)만을 이용해 입력해주세요'
   },
   email: {
-    [ERROR_TYPE.VALUE_MISSING]: '이메일을 입력해주세요',
-    [ERROR_TYPE.TYPE_MISMATCH]: '이메일 형식에 맞게 입력해주세요'
+    [FORM_FIELD_ERROR_TYPE.VALUE_MISSING]: '이메일을 입력해주세요',
+    [FORM_FIELD_ERROR_TYPE.TYPE_MISMATCH]: '이메일 형식에 맞게 입력해주세요'
   },
   password: {
-    [ERROR_TYPE.VALUE_MISSING]: '비밀번호를 입력해주세요',
-    [ERROR_TYPE.TOO_SHORT]: '비밀번호를 8자 이상 32자 이하로 입력해주세요',
-    [ERROR_TYPE.TOO_LONG]: '비밀번호를 8자 이상 32자 이하로 입력해주세요',
-    [ERROR_TYPE.PATTERN_MISMATCH]: '비밀번호에 영문 대소문자/숫자/특수문자 각각 적어도 1자 이상씩 포함해주세요'
+    [FORM_FIELD_ERROR_TYPE.VALUE_MISSING]: '비밀번호를 입력해주세요',
+    [FORM_FIELD_ERROR_TYPE.TOO_SHORT]: '비밀번호를 8자 이상 32자 이하로 입력해주세요',
+    [FORM_FIELD_ERROR_TYPE.TOO_LONG]: '비밀번호를 8자 이상 32자 이하로 입력해주세요',
+    [FORM_FIELD_ERROR_TYPE.PATTERN_MISMATCH]: '비밀번호에 영문 대소문자/숫자/특수문자 각각 적어도 1자 이상씩 포함해주세요'
   },
   passwordCheck: {
-    [ERROR_TYPE.VALUE_MISSING]: '비밀번호 확인을 입력해주세요',
+    [FORM_FIELD_ERROR_TYPE.VALUE_MISSING]: '비밀번호 확인을 입력해주세요',
   }
 });
-
-function getValidationResult(field, validity=null) {
-  const errorTypes = Object.keys(errorMessages[field]);
-  const validationResult = {};
-  if(!validity) {
-    errorTypes.forEach((errorType) => validationResult[errorType] = false);
-    validationResult[ERROR_TYPE.VALUE_MISSING] = true;
-    return validationResult;
-  }
-  errorTypes.forEach((errorType) => validationResult[errorType] = validity[errorType]);
-  return validationResult;
-}
-
-function getErrorMessageFromValidationResults(validationResults) {
-  for (const field in validationResults) {
-    const validationResult = validationResults[field];
-    for(const errorType in validationResult) {
-      if(validationResult[errorType]) {
-        return {
-          field,
-          errorMessage: errorMessages[field][errorType]
-        };
-      }
-    }
-  }
-  return null;
-}
-
-const emptyErrorMessage = {
-  field: '',
-  errorMessage: '',
-};
 
 const SignUpForm = () => {
   const router = useRouter();
 
-  const [fieldValues, setFieldValues] = useState({
+  const { fieldValues, onFieldValueChanged, getErrorMessageWithHighPriorityFromValidationResults } = useValidatedFormFields({
     username: '',
     email: '',
     password: '',
     passwordCheck: ''
-  });
-  const [validationResults, setValidationResults] = useState({
-    username: getValidationResult('username'),
-    email: getValidationResult('email'),
-    password: getValidationResult('password'),
-    passwordCheck: getValidationResult('passwordCheck'),
-  });
-
+  }, errorMessages);
+  
   const [errorMessageModal, setErrorMessageModal] = useState(false);
 
-  const [errorMessage, setErrorMessage] = useState(emptyErrorMessage);
+  const [displayedErrorMessage, setDisplayedErrorMessage] = useState({
+    field: '',
+    errorMessage: ''
+  });
 
   const onErrorMessageModalClosed = useCallback(() => {
     setErrorMessageModal(false);
   }, []);
 
-  const onFieldValueChanged = useCallback(e => {
-    const {name: fieldName, value, validity} = e.target;
-    setFieldValues({
-      ...fieldValues,
-      [fieldName]: value
-    });
-    setValidationResults({
-      ...validationResults,
-      [fieldName]: getValidationResult(fieldName, validity)
-    });
-    if(errorMessage.field || errorMessage.errorMessage) {
-      setErrorMessage(emptyErrorMessage);
-    }
-  }, [fieldValues, validationResults, errorMessage]);
-
   const onFormSubmitted = useCallback(async (e) => {
     console.log('[signUpForm submit event]');
     e.preventDefault();
-    let displayedErrorMessage = getErrorMessageFromValidationResults(validationResults);
-    if(displayedErrorMessage) {
+    let errorMessageWithHighPriority = getErrorMessageWithHighPriorityFromValidationResults();
+    if(errorMessageWithHighPriority) {
+      setDisplayedErrorMessage(errorMessageWithHighPriority);
       setErrorMessageModal(true);
-      setErrorMessage(displayedErrorMessage);
       return;
     }
     const { username, email, password, passwordCheck } = fieldValues;
     if(password !== passwordCheck) {
-      displayedErrorMessage = {
+      errorMessageWithHighPriority = {
         field: 'passwordCheck',
         errorMessage: '비밀번호와 비밀번호 확인이 일치하지 않습니다'
       };
+      setDisplayedErrorMessage(errorMessageWithHighPriority);
       setErrorMessageModal(true);
-      setErrorMessage(displayedErrorMessage);
       return;
     }
     try {
@@ -136,7 +79,7 @@ const SignUpForm = () => {
     } catch(error) {
       console.error(error);
     }
-  }, [fieldValues, validationResults, router]);
+  }, [fieldValues, getErrorMessageWithHighPriorityFromValidationResults, router]);
 
   return (
     <form noValidate className={styles.SignUpForm} onSubmit={onFormSubmitted}>
@@ -153,9 +96,9 @@ const SignUpForm = () => {
                required minLength={2} maxLength={30}
                pattern="^[ㄱ-ㅎ가-힣\w-]+$"
         />
-        {errorMessage.field === 'username' &&
+        {displayedErrorMessage.field === 'username' &&
           <FormMessage isActive>
-            {errorMessage.errorMessage}
+            {displayedErrorMessage.errorMessage}
           </FormMessage>
         }
       </div>
@@ -165,9 +108,9 @@ const SignUpForm = () => {
                onChange={onFieldValueChanged}
                required
         />
-        {errorMessage.field === 'email' &&
+        {displayedErrorMessage.field === 'email' &&
           <FormMessage isActive>
-            {errorMessage.errorMessage}
+            {displayedErrorMessage.errorMessage}
           </FormMessage>
         }
       </div>
@@ -178,9 +121,9 @@ const SignUpForm = () => {
                required pattern="^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).+$"
                minLength={8} maxLength={32}
         />
-        {errorMessage.field === 'password' &&
+        {displayedErrorMessage.field === 'password' &&
           <FormMessage isActive>
-            {errorMessage.errorMessage}
+            {displayedErrorMessage.errorMessage}
           </FormMessage>
         }
       </div>
@@ -189,9 +132,9 @@ const SignUpForm = () => {
         <input type="password" id="user-password-check" name="passwordCheck" placeholder="비밀번호 확인"
                value={fieldValues.passwordCheck} onChange={onFieldValueChanged}
                required />
-        {errorMessage.field === 'passwordCheck' &&
+        {displayedErrorMessage.field === 'passwordCheck' &&
           <FormMessage isActive>
-            {errorMessage.errorMessage}
+            {displayedErrorMessage.errorMessage}
           </FormMessage>
         }
       </div>
@@ -202,7 +145,7 @@ const SignUpForm = () => {
         가입 시, Easy Log의 <strong>이용약관</strong>에 동의합니다.
       </div>
       {errorMessageModal &&
-        <Modal title='계정 만들기 실패' content={errorMessage.errorMessage}
+        <Modal title='계정 만들기 실패' content={displayedErrorMessage.errorMessage}
                onModalClosed={onErrorMessageModalClosed} />
       }
     </form>
