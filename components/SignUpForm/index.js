@@ -9,6 +9,8 @@ import FormMessage from '../FormMessage';
 import Modal from '../Modal';
 import useValidatedFormFields, { FORM_FIELD_ERROR_TYPE } from '../../hooks/useValidatedFormFields';
 
+const PASSWORD_AND_PASSWORD_CHECK_DIFFERENT = 'passwordAndPasswordCheckDifferent';
+
 const errorMessages = Object.freeze({
   username: {
     [FORM_FIELD_ERROR_TYPE.VALUE_MISSING]: '유저 이름을 입력해주세요',
@@ -28,61 +30,54 @@ const errorMessages = Object.freeze({
   },
   passwordCheck: {
     [FORM_FIELD_ERROR_TYPE.VALUE_MISSING]: '비밀번호 확인을 입력해주세요',
+    [PASSWORD_AND_PASSWORD_CHECK_DIFFERENT]: '비밀번호와 비밀번호 확인이 일치하지 않습니다'
   }
 });
 
 const SignUpForm = () => {
   const router = useRouter();
 
-  const { fieldValues, onFieldValueChanged, getErrorMessageWithHighPriorityFromValidationResults } = useValidatedFormFields({
+  const [errorMessageOnModal, setErrorMessageOnModal] = useState('');
+
+  const onCloseButtonClicked = useCallback(() => {
+    setErrorMessageOnModal('');
+  }, []);
+
+  const { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldErrorMessage } = useValidatedFormFields({
     username: '',
     email: '',
     password: '',
     passwordCheck: ''
-  }, errorMessages);
-  
-  const [errorMessageModal, setErrorMessageModal] = useState(false);
-
-  const [displayedErrorMessage, setDisplayedErrorMessage] = useState({
-    field: '',
-    errorMessage: ''
+  }, errorMessages, {
+    passwordCheck: {
+      [PASSWORD_AND_PASSWORD_CHECK_DIFFERENT]: fieldValues => fieldValues.password === fieldValues.passwordCheck
+    }
   });
 
-  const onErrorMessageModalClosed = useCallback(() => {
-    setErrorMessageModal(false);
-  }, []);
+  const onSignUpFormSubmitted = onFormSubmitted(
+     async fieldValues => {
+        const { username, email, password } = fieldValues;
+        try {
+          const response = await axios.post('/api/users', { username, email, password });
+          router.push('/');
+        } catch (error) {
+          console.log(error);
+        }
+     },
+    fieldError => {
+       setErrorMessageOnModal(fieldError.errorMessage);
+    }
+  );
 
-  const onFormSubmitted = useCallback(async (e) => {
-    console.log('[signUpForm submit event]');
-    e.preventDefault();
-    let errorMessageWithHighPriority = getErrorMessageWithHighPriorityFromValidationResults();
-    if(errorMessageWithHighPriority) {
-      setDisplayedErrorMessage(errorMessageWithHighPriority);
-      setErrorMessageModal(true);
-      return;
-    }
-    const { username, email, password, passwordCheck } = fieldValues;
-    if(password !== passwordCheck) {
-      errorMessageWithHighPriority = {
-        field: 'passwordCheck',
-        errorMessage: '비밀번호와 비밀번호 확인이 일치하지 않습니다'
-      };
-      setDisplayedErrorMessage(errorMessageWithHighPriority);
-      setErrorMessageModal(true);
-      return;
-    }
-    try {
-      const response = await axios.post('/api/users', {
-        username, email, password
-      });
-      router.push('/');
-    } catch(error) {
-      console.error(error);
-    }
-  }, [fieldValues, getErrorMessageWithHighPriorityFromValidationResults, router]);
+  const fieldErrorMessages = {
+    username: getFieldErrorMessage('username'),
+    email: getFieldErrorMessage('email'),
+    password: getFieldErrorMessage('password'),
+    passwordCheck: getFieldErrorMessage('passwordCheck')
+  };
 
   return (
-    <form noValidate className={styles.SignUpForm} onSubmit={onFormSubmitted}>
+    <form noValidate className={styles.SignUpForm} onSubmit={onSignUpFormSubmitted}>
       <div className={styles.title}>
         <Link href="/">
           <a className={styles.appName}>Easy Log</a>
@@ -96,9 +91,9 @@ const SignUpForm = () => {
                required minLength={2} maxLength={30}
                pattern="^[ㄱ-ㅎ가-힣\w-]+$"
         />
-        {displayedErrorMessage.field === 'username' &&
+        {fieldErrorMessages.username &&
           <FormMessage isActive>
-            {displayedErrorMessage.errorMessage}
+            {fieldErrorMessages.username}
           </FormMessage>
         }
       </div>
@@ -108,9 +103,9 @@ const SignUpForm = () => {
                onChange={onFieldValueChanged}
                required
         />
-        {displayedErrorMessage.field === 'email' &&
+        {fieldErrorMessages.email &&
           <FormMessage isActive>
-            {displayedErrorMessage.errorMessage}
+            {fieldErrorMessages.email}
           </FormMessage>
         }
       </div>
@@ -121,9 +116,9 @@ const SignUpForm = () => {
                required pattern="^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).+$"
                minLength={8} maxLength={32}
         />
-        {displayedErrorMessage.field === 'password' &&
+        {fieldErrorMessages.password &&
           <FormMessage isActive>
-            {displayedErrorMessage.errorMessage}
+            {fieldErrorMessages.password}
           </FormMessage>
         }
       </div>
@@ -132,9 +127,9 @@ const SignUpForm = () => {
         <input type="password" id="user-password-check" name="passwordCheck" placeholder="비밀번호 확인"
                value={fieldValues.passwordCheck} onChange={onFieldValueChanged}
                required />
-        {displayedErrorMessage.field === 'passwordCheck' &&
+        {fieldErrorMessages.passwordCheck &&
           <FormMessage isActive>
-            {displayedErrorMessage.errorMessage}
+            {fieldErrorMessages.passwordCheck}
           </FormMessage>
         }
       </div>
@@ -144,9 +139,8 @@ const SignUpForm = () => {
       <div className={styles.terms}>
         가입 시, Easy Log의 <strong>이용약관</strong>에 동의합니다.
       </div>
-      {errorMessageModal &&
-        <Modal title='계정 만들기 실패' content={displayedErrorMessage.errorMessage}
-               onModalClosed={onErrorMessageModalClosed} />
+      {errorMessageOnModal &&
+        <Modal title="계정 만들기 실패" content={errorMessageOnModal} onModalClosed={onCloseButtonClicked} />
       }
     </form>
   );
