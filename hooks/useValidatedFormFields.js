@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export const FORM_FIELD_ERROR_TYPE = Object.freeze({
   PATTERN_MISMATCH: 'patternMismatch',
@@ -9,31 +9,27 @@ export const FORM_FIELD_ERROR_TYPE = Object.freeze({
 });
 
 function getInitialValidationResults(errorMessages) {
-  const fieldNames = Object.keys(errorMessages);
+  const validationResults = {};
+  for(const validatedFieldName in errorMessages) {
+    const fieldValidationResult = {};
+    for(const errorType in errorMessages[validatedFieldName]) {
+      fieldValidationResult[errorType] = false;
+    }
+    validationResults[validatedFieldName] = fieldValidationResult;
+  }
 
-  return Object.fromEntries(fieldNames.map(fieldName => {
-    const errorTypes = Object.keys(errorMessages[fieldName] ?? {});
-    const validationResult = Object.fromEntries(errorTypes.map(errorType => [errorType, false]));
-    
-    return [fieldName, validationResult];
-  }));
+  return validationResults;
 }
 
-function getValidationResultFromValidity(validity, fieldErrorMessages) {
-  const errorTypes = Object.keys(fieldErrorMessages);
+function getFieldValidationResultFromValidity(validity, fieldErrorMessages) {
   const validationResult = {};
-  for (const errorType of errorTypes) {
+  for (const errorType in fieldErrorMessages) {
     if(errorType in validity) {
       validationResult[errorType] = validity[errorType];
     }
   }
   
   return validationResult;
-}
-
-function getFieldErrorType(fieldValidationResult) {
-  const fieldErrorTypes = Object.keys(fieldValidationResult);
-  return fieldErrorTypes.find(fieldErrorType => fieldValidationResult[fieldErrorType]) ?? '';
 }
 
 function getAdditionalValidationsArray(additionalValidations) {
@@ -45,40 +41,48 @@ function getAdditionalValidationsArray(additionalValidations) {
       });
     }
   }
+  
   return array;
 }
 
-function mergeValidationResults(prevValidationResults, validationResults) {
-  const result = {...prevValidationResults};
-  for(const fieldName in validationResults) {
-    result[fieldName] = {...prevValidationResults[fieldName], ...validationResults[fieldName]}
+function getAdditionalFieldValidationResult(additionalValidationsArrayForField, fieldValues) {
+  const result = {};
+  for(const { errorType, isValid } of additionalValidationsArrayForField) {
+    result[errorType] = !isValid(fieldValues);
   }
+  
   return result;
 }
 
-function getAdditionalValidationResults(additionalValidationsArray, fieldValues) {
-  const additionalValidationsResult = {};
-  for(const { fieldName, errorType, isValid } of additionalValidationsArray) {
-    const result = !isValid(fieldValues);
-    if(fieldName in additionalValidationsResult) {
-      additionalValidationsResult[fieldName][errorType] = result;
-    } else {
-      additionalValidationsResult[fieldName] = {
-        [errorType]: result
-      }
-    }
-  }
-  return additionalValidationsResult;
-}
-
-const useValidatedFormFields = (initialValues, errorMessages, additionalValidations) => {
+const useValidatedFormFields = (initialValues, errorMessages, additionalValidations = {}) => {
   const validatedFieldNames = Object.keys(errorMessages);
   const additionalValidationsArray = getAdditionalValidationsArray(additionalValidations);
   
   const [fieldValues, setFieldValues] = useState(initialValues);
+  const fieldValidationResults = useRef(getInitialValidationResults(errorMessages));
 
-  const [validationResults, setValidationResults] = useState(getInitialValidationResults(errorMessages));
+  const getFieldError = useCallback(fieldName => {
+    if(!validatedFieldNames.includes(fieldName)) {
+      return [];
+    }
 
+    return Object.entries(fieldValidationResults.current[fieldName])
+      .filter(([, isError]) => isError)
+      .map(([errorType]) => ({errorType, errorMessage: errorMessages[fieldName][errorType]}));
+  }, [validatedFieldNames, errorMessages]);
+
+  const getMainFieldError = useCallback(() => {
+    const fieldName = validatedFieldNames.find(validatedFieldName => getFieldError(validatedFieldName).length > 0);
+    if(!fieldName) {
+      return {};
+    }
+
+    return ({
+      fieldName,
+      fieldError: getFieldError(fieldName)
+    });
+  }, [getFieldError, validatedFieldNames]);
+  
   const onFieldValueChanged = useCallback(e => {
     const { name: fieldName, value, validity } = e.target;
     const currentFieldValues = {
@@ -88,68 +92,43 @@ const useValidatedFormFields = (initialValues, errorMessages, additionalValidati
     setFieldValues(currentFieldValues);
     
     if(validatedFieldNames.includes(fieldName)) {
-      const currentValidationResults = {
-        ...validationResults,
-        [fieldName]: {
-          ...validationResults[fieldName],
-          ...getValidationResultFromValidity(validity, errorMessages[fieldName])
-        }
+      fieldValidationResults.current[fieldName] = {
+        ...fieldValidationResults.current[fieldName],
+        ...getFieldValidationResultFromValidity(validity, errorMessages[fieldName]),
+        ...getAdditionalFieldValidationResult(
+          additionalValidationsArray.filter(additionalValidation => additionalValidation.fieldName === fieldName),
+          currentFieldValues
+        )
       };
-      const additionalValidationsResults = getAdditionalValidationResults(
-        additionalValidationsArray.filter(additionalValidation => additionalValidation.fieldName === fieldName),
-        currentFieldValues
-      );
-      setValidationResults(mergeValidationResults(currentValidationResults, additionalValidationsResults));
     }
-    
-  }, [additionalValidationsArray, errorMessages, fieldValues, validatedFieldNames, validationResults]);
+  }, [additionalValidationsArray, errorMessages, fieldValues, validatedFieldNames]);
 
   const onFormSubmitted = useCallback((onValidationSucceeded, onValidationFailed) => {
     return e => {
       e.preventDefault();
       
       const { elements } = e.target;
-      let currentValidationResults = Object.fromEntries(validatedFieldNames.map(fieldName => [
-        fieldName,
-        getValidationResultFromValidity(elements[fieldName].validity, errorMessages[fieldName])
-      ]));
-      const additionalValidationsResults = getAdditionalValidationResults(additionalValidationsArray, fieldValues);
-      currentValidationResults = mergeValidationResults(currentValidationResults, additionalValidationsResults);
-      setValidationResults(currentValidationResults);
+      for(const validatedFieldName of validatedFieldNames) {
+        fieldValidationResults.current[validatedFieldName] = {
+          ...fieldValidationResults.current[validatedFieldName],
+          ...getFieldValidationResultFromValidity(elements[validatedFieldName].validity, errorMessages[validatedFieldName]),
+          ...getAdditionalFieldValidationResult(
+            additionalValidationsArray.filter(additionalValidation => additionalValidation.fieldName === validatedFieldName),
+            fieldValues
+          )
+        }
+      }
 
-      const fieldErrorWithHighPriority = validatedFieldNames
-        .map(validatedFieldName => ({
-          fieldName: validatedFieldName,
-          errorType: getFieldErrorType(currentValidationResults[validatedFieldName])
-        }))
-        .find(fieldError => fieldError.errorType !== '');
-      
-      if(!fieldErrorWithHighPriority) {
-        onValidationSucceeded(fieldValues);
+      const mainFieldError = getMainFieldError();
+      if(mainFieldError.fieldName && mainFieldError.fieldError) {
+        onValidationFailed(mainFieldError);
       } else {
-        const { fieldName, errorType } = fieldErrorWithHighPriority;
-        onValidationFailed({
-          ...fieldErrorWithHighPriority,
-          errorMessage: errorMessages[fieldName][errorType]
-        });
+        onValidationSucceeded(fieldValues);
       }
     }
-  }, [additionalValidationsArray, errorMessages, fieldValues, validatedFieldNames]);
+  }, [additionalValidationsArray, errorMessages, fieldValues, getMainFieldError, validatedFieldNames]);
 
-  const getFieldErrorMessage = useCallback(fieldName => {
-    if(!validatedFieldNames.includes(fieldName)) {
-      return '';
-    }
-
-    const fieldErrorType = getFieldErrorType(validationResults[fieldName]);
-    if(!fieldErrorType) {
-      return '';
-    }
-
-    return errorMessages[fieldName][fieldErrorType];
-  }, [validatedFieldNames, validationResults, errorMessages]);
-
-  return { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldErrorMessage };
+  return { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldError, getMainFieldError };
 };
 
 export default useValidatedFormFields;

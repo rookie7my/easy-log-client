@@ -25,10 +25,10 @@ const LoginForm = () => {
 
   const [loginRequestStatus, setLoginRequestStatus] = useState('idle');
 
-  const { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldErrorMessage } = useValidatedFormFields({
+  const { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldError } = useValidatedFormFields({
     email: '',
     password: '',
-  }, errorMessages, {});
+  }, errorMessages);
 
   const [errorMessageOnModal, setErrorMessageOnModal] = useState('');
 
@@ -52,14 +52,14 @@ const LoginForm = () => {
         setLoginRequestStatus('idle');
       }
     },
-    fieldError => {
-      setErrorMessageOnModal(fieldError.errorMessage);
+    ({ fieldError }) => {
+      setErrorMessageOnModal(fieldError[0].errorMessage);
     }
   );
 
-  const fieldErrorMessages = {
-    email: getFieldErrorMessage('email'),
-    password: getFieldErrorMessage('password')
+  const fieldError = {
+    email: getFieldError('email'),
+    password: getFieldError('password')
   };
 
   return (
@@ -77,9 +77,9 @@ const LoginForm = () => {
                  required
                  value={fieldValues.email} onChange={onFieldValueChanged}
           />
-          {fieldErrorMessages.email &&
+          {fieldError.email.length > 0 &&
             <FormMessage isActive>
-              {fieldErrorMessages.email}
+              {fieldError.email[0].errorMessage}
             </FormMessage>
           }
         </div>
@@ -89,9 +89,9 @@ const LoginForm = () => {
                  required
                  value={fieldValues.password} onChange={onFieldValueChanged}
           />
-          {fieldErrorMessages.password &&
+          {fieldError.password.length > 0 &&
             <FormMessage isActive>
-              {fieldErrorMessages.password}
+              {fieldError.password[0].errorMessage}
             </FormMessage>
           }
         </div>

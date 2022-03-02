@@ -43,7 +43,7 @@ const SignUpForm = () => {
     setErrorMessageOnModal('');
   }, []);
 
-  const { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldErrorMessage } = useValidatedFormFields({
+  const { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldError } = useValidatedFormFields({
     username: '',
     email: '',
     password: '',
@@ -64,16 +64,16 @@ const SignUpForm = () => {
           console.log(error);
         }
      },
-    fieldError => {
-       setErrorMessageOnModal(fieldError.errorMessage);
+    mainFieldError => {
+       setErrorMessageOnModal(mainFieldError.fieldError[0].errorMessage);
     }
   );
 
-  const fieldErrorMessages = {
-    username: getFieldErrorMessage('username'),
-    email: getFieldErrorMessage('email'),
-    password: getFieldErrorMessage('password'),
-    passwordCheck: getFieldErrorMessage('passwordCheck')
+  const fieldError = {
+    username: getFieldError('username'),
+    email: getFieldError('email'),
+    password: getFieldError('password'),
+    passwordCheck: getFieldError('passwordCheck')
   };
 
   return (
@@ -91,9 +91,9 @@ const SignUpForm = () => {
                required minLength={2} maxLength={30}
                pattern="^[ㄱ-ㅎ가-힣\w-]+$"
         />
-        {fieldErrorMessages.username &&
+        {fieldError.username.length > 0 &&
           <FormMessage isActive>
-            {fieldErrorMessages.username}
+            {fieldError.username[0].errorMessage}
           </FormMessage>
         }
       </div>
@@ -103,9 +103,9 @@ const SignUpForm = () => {
                onChange={onFieldValueChanged}
                required
         />
-        {fieldErrorMessages.email &&
+        {fieldError.email.length > 0 &&
           <FormMessage isActive>
-            {fieldErrorMessages.email}
+            {fieldError.email[0].errorMessage}
           </FormMessage>
         }
       </div>
@@ -116,9 +116,9 @@ const SignUpForm = () => {
                required pattern="^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).+$"
                minLength={8} maxLength={32}
         />
-        {fieldErrorMessages.password &&
+        {fieldError.password.length > 0 &&
           <FormMessage isActive>
-            {fieldErrorMessages.password}
+            {fieldError.password[0].errorMessage}
           </FormMessage>
         }
       </div>
@@ -127,9 +127,9 @@ const SignUpForm = () => {
         <input type="password" id="user-password-check" name="passwordCheck" placeholder="비밀번호 확인"
                value={fieldValues.passwordCheck} onChange={onFieldValueChanged}
                required />
-        {fieldErrorMessages.passwordCheck &&
+        {fieldError.passwordCheck.length > 0 &&
           <FormMessage isActive>
-            {fieldErrorMessages.passwordCheck}
+            {fieldError.passwordCheck[0].errorMessage}
           </FormMessage>
         }
       </div>
