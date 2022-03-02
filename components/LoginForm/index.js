@@ -1,11 +1,23 @@
+import styles from './styles.module.css';
+
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useDispatch } from 'react-redux';
-import styles from './styles.module.css';
+
 import { login } from '../../reducers/currentUserSlice';
 import FormMessage from "../FormMessage";
 import Modal from '../Modal';
+import useValidatedFormFields, {FORM_FIELD_ERROR_TYPE} from '../../hooks/useValidatedFormFields';
+
+const errorMessages = {
+  email: {
+    [FORM_FIELD_ERROR_TYPE.VALUE_MISSING]: '이메일을 입력해주세요'
+  },
+  password: {
+    [FORM_FIELD_ERROR_TYPE.VALUE_MISSING]: '비밀번호를 입력해주세요'
+  }
+};
 
 const LoginForm = () => {
   const router = useRouter();
@@ -13,76 +25,42 @@ const LoginForm = () => {
 
   const [loginRequestStatus, setLoginRequestStatus] = useState('idle');
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldErrorMessage } = useValidatedFormFields({
+    email: '',
+    password: '',
+  }, errorMessages, {});
 
-  const [errorMessageModal, setErrorMessageModal] = useState(false);
+  const [errorMessageOnModal, setErrorMessageOnModal] = useState('');
 
-  const [errorMessage, setErrorMessage] = useState({
-    field: '',
-    errorMessage: '',
-  });
-
-  const onModalClosed = useCallback(() => {
-    setErrorMessageModal(false);
+  const onModalCloseButtonClicked = useCallback(() => {
+    setErrorMessageOnModal('');
   }, []);
 
-  const onEmailChanged = useCallback((e) => {
-    setEmail(e.target.value);
-    if(errorMessage.field || errorMessage.errorMessage) {
-      setErrorMessage({
-        field: '',
-        errorMessage: '',
-      });
+  const onLoginFormSubmitted = onFormSubmitted(
+    async fieldValues => {
+      if(loginRequestStatus === 'loading') {
+        return;
+      }
+      try {
+        setLoginRequestStatus('loading');
+        await dispatch(login({ email: fieldValues.email, password: fieldValues.password })).unwrap();
+        console.log('logged in successfully');
+        router.push('/');
+      } catch(err) {
+        setErrorMessageOnModal('이메일 또는 비밀번호가 유효하지 않습니다');
+      } finally {
+        setLoginRequestStatus('idle');
+      }
+    },
+    fieldError => {
+      setErrorMessageOnModal(fieldError.errorMessage);
     }
-  }, [errorMessage]);
+  );
 
-  const onPasswordChanged = useCallback((e) => {
-    setPassword(e.target.value);
-    if(errorMessage.field || errorMessage.errorMessage) {
-      setErrorMessage({
-        field: '',
-        errorMessage: '',
-      });
-    }
-  }, [errorMessage]);
-
-  const onFormSubmitted = useCallback(async (e) => {
-    e.preventDefault();
-    if(!email) {
-      setErrorMessage({
-        field: 'email',
-        errorMessage: '이메일을 입력해주세요'
-      });
-      setErrorMessageModal(true);
-      return;
-    }
-    if(!password) {
-      setErrorMessage({
-        field: 'password',
-        errorMessage: '비밀번호를 입력해주세요'
-      });
-      setErrorMessageModal(true);
-      return;
-    }
-    if(loginRequestStatus === 'loading') {
-      return;
-    }
-    try {
-      setLoginRequestStatus('loading');
-      await dispatch(login({email, password})).unwrap();
-      console.log('logged in successfully');
-      router.push('/');
-    } catch(err) {
-      setErrorMessage({
-        field: 'all',
-        errorMessage: '이메일 또는 비밀번호가 유효하지 않습니다'
-      });
-      setErrorMessageModal(true);
-    } finally {
-      setLoginRequestStatus('idle');
-    }
-  }, [email, password, loginRequestStatus, dispatch]);
+  const fieldErrorMessages = {
+    email: getFieldErrorMessage('email'),
+    password: getFieldErrorMessage('password')
+  };
 
   return (
     <section className={styles.LoginForm}>
@@ -92,26 +70,28 @@ const LoginForm = () => {
         </Link>
         <h2>로그인</h2>
       </header>
-      <form onSubmit={onFormSubmitted}>
+      <form noValidate onSubmit={onLoginFormSubmitted}>
         <div className={styles.item}>
           <label htmlFor="email">이메일</label>
-          <input id="email" type="text"
-                 value={email} onChange={onEmailChanged}
+          <input id="email" type="text" name="email"
+                 required
+                 value={fieldValues.email} onChange={onFieldValueChanged}
           />
-          {errorMessage.field === 'email' &&
+          {fieldErrorMessages.email &&
             <FormMessage isActive>
-              {errorMessage.errorMessage}
+              {fieldErrorMessages.email}
             </FormMessage>
           }
         </div>
         <div className={styles.item}>
           <label htmlFor="password">비밀번호</label>
-          <input id="password" type="password"
-                 value={password} onChange={onPasswordChanged}
+          <input id="password" type="password" name="password"
+                 required
+                 value={fieldValues.password} onChange={onFieldValueChanged}
           />
-          {errorMessage.field === 'password' &&
+          {fieldErrorMessages.password &&
             <FormMessage isActive>
-              {errorMessage.errorMessage}
+              {fieldErrorMessages.password}
             </FormMessage>
           }
         </div>
@@ -123,10 +103,10 @@ const LoginForm = () => {
           </Link>
         </div>
       </form>
-      {errorMessageModal &&
+      {errorMessageOnModal &&
         <Modal title="로그인 실패"
-               content={errorMessage.errorMessage}
-               onModalClosed={onModalClosed}
+               content={errorMessageOnModal}
+               onModalClosed={onModalCloseButtonClicked}
         />
       }
     </section>
