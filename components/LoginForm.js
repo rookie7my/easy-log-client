@@ -1,9 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { useDispatch } from 'react-redux';
 
-import { login } from '../reducers/currentUserSlice';
 import FormMessage from "./FormMessage";
 import Modal from './Modal';
 import useValidatedFormFields, {FORM_FIELD_ERROR_TYPE} from '../hooks/useValidatedFormFields';
@@ -19,9 +17,6 @@ const errorMessages = {
 
 const LoginForm = () => {
   const router = useRouter();
-  const dispatch = useDispatch();
-
-  const [loginRequestStatus, setLoginRequestStatus] = useState('idle');
 
   const { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldError } = useValidatedFormFields({
     email: '',
@@ -35,20 +30,9 @@ const LoginForm = () => {
   }, []);
 
   const onLoginFormSubmitted = onFormSubmitted(
-    async fieldValues => {
-      if(loginRequestStatus === 'loading') {
-        return;
-      }
-      try {
-        setLoginRequestStatus('loading');
-        await dispatch(login({ email: fieldValues.email, password: fieldValues.password })).unwrap();
+    fieldValues => {
         console.log('logged in successfully');
         router.push('/');
-      } catch(err) {
-        setErrorMessageOnModal('이메일 또는 비밀번호가 유효하지 않습니다');
-      } finally {
-        setLoginRequestStatus('idle');
-      }
     },
     ({ fieldError }) => {
       setErrorMessageOnModal(fieldError[0].errorMessage);
