@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { useMutation, useQueryClient } from 'react-query';
+import axios from 'axios';
 
 import FormMessage from "./FormMessage";
 import Modal from './Modal';
@@ -18,6 +20,17 @@ const errorMessages = {
 const LoginForm = () => {
   const router = useRouter();
 
+  const queryClient = useQueryClient();
+
+  const loginMutation = useMutation(({ email, password }) => {
+    return axios.post('/api/users/login', { email, password });
+  }, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('currentUser');
+      router.push('/');
+    }
+  });
+
   const { fieldValues, onFieldValueChanged, onFormSubmitted, getFieldError } = useValidatedFormFields({
     email: '',
     password: '',
@@ -31,8 +44,7 @@ const LoginForm = () => {
 
   const onLoginFormSubmitted = onFormSubmitted(
     fieldValues => {
-        console.log('logged in successfully');
-        router.push('/');
+      loginMutation.mutate(fieldValues);
     },
     ({ fieldError }) => {
       setErrorMessageOnModal(fieldError[0].errorMessage);
