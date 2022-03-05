@@ -37,7 +37,7 @@ const SignUpForm = () => {
 
   const [errorMessageOnModal, setErrorMessageOnModal] = useState('');
 
-  const onCloseButtonClicked = useCallback(() => {
+  const onModalCloseButtonClicked = useCallback(() => {
     setErrorMessageOnModal('');
   }, []);
 
@@ -154,7 +154,9 @@ const SignUpForm = () => {
         </div>
       </form>
       {errorMessageOnModal &&
-        <Modal title="계정 만들기 실패" content={errorMessageOnModal} onModalClosed={onCloseButtonClicked} />
+        <Modal title="계정 만들기 실패" onModalCloseButtonClicked={onModalCloseButtonClicked}>
+          <p>{errorMessageOnModal}</p>
+        </Modal>
       }
     </section>
   );

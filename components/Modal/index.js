@@ -1,40 +1,54 @@
-import {useEffect, useRef} from 'react';
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
-import styles from './styles.module.css';
-import ModalPortal from './ModalPortal';
-import { AiOutlineClose } from 'react-icons/ai';
+import getModalContainer from './getModalContainer';
 
-const Modal = ({onModalClosed, title, content}) => {
-  const closeBtn = useRef();
+let $modalContainer = null;
+if (typeof window !== 'undefined') {
+  $modalContainer = getModalContainer();
+}
+
+const Modal = ({ onModalCloseButtonClicked, title, children }) => {
+  const closeButtonRef = useRef();
   useEffect(() => {
-    closeBtn.current.focus();
+    closeButtonRef.current.focus();
   }, []);
 
-  return (
-    <ModalPortal>
-      <div className={styles.dimmer} onClick={onModalClosed} />
-      <div className={styles.outer}>
-        <header className={styles.header}>
-          <div className={styles.title}>
-            {title}
-          </div>
-          <button ref={closeBtn} className={styles.closeBtn}
-                  onClick={onModalClosed}>
-            <AiOutlineClose />
-          </button>
+  return createPortal(
+    <>
+      <div
+        onClick={onModalCloseButtonClicked}
+        className="fixed inset-0 backdrop-blur-sm backdrop-brightness-75"
+      />
+      <section className="flex flex-col gap-y-2 bg-white rounded
+          fixed top-1/2 left-1/2 -translate-x-2/4 -translate-y-2/4
+          w-80 h-52 p-4"
+      >
+        <header>
+          <h2 className="text-center font-bold">{title}</h2>
         </header>
-        <section className={styles.content}>
-          {content}
-        </section>
-      </div>
-    </ModalPortal>
+        <div className="grow flex flex-col justify-center items-center">
+          {children}
+        </div>
+        <div className="flex justify-end">
+          <button
+            ref={closeButtonRef}
+            onClick={onModalCloseButtonClicked}
+            className="bg-blue-500 text-white rounded p-1.5 text-sm hover:bg-blue-700"
+          >
+            닫기
+          </button>
+        </div>
+      </section>
+    </>,
+    $modalContainer
   );
 };
 
 Modal.propTypes = {
   title: PropTypes.string.isRequired,
-  content: PropTypes.string.isRequired,
-  onModalClosed: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+  onModalCloseButtonClicked: PropTypes.func.isRequired,
 };
 
 export default Modal;

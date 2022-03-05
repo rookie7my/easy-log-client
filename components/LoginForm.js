@@ -106,9 +106,10 @@ const LoginForm = () => {
       </form>
       {errorMessageOnModal &&
         <Modal title="로그인 실패"
-               content={errorMessageOnModal}
-               onModalClosed={onModalCloseButtonClicked}
-        />
+               onModalCloseButtonClicked={onModalCloseButtonClicked}
+        >
+          <p>{errorMessageOnModal}</p>
+        </Modal>
       }
     </section>
   );
