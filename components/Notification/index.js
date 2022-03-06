@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import classNames from 'classnames';
 import { IoAlertCircle, IoCheckmarkCircle, IoCloseOutline, IoInformationCircle } from 'react-icons/io5';
-import styles from './Notification.module.css';
 import getNotificationContainer from './getNotificationContainer';
 
 export const NOTIFICATION_TYPE = Object.freeze({
@@ -11,12 +10,12 @@ export const NOTIFICATION_TYPE = Object.freeze({
   ERROR: 'ERROR',
 });
 
-const DELETE_TIME_IN_MS = 300;
-const AUTO_DELETE_TIME_IN_MS = 5 * 1000;
+const CLOSING_PERIOD_IN_MS = 300;
+const AUTO_CLOSING_PERIOD_IN_MS = 5 * 1000;
 
-const Notification = ({type, children, onClose, autoClose}) => {
-  const $notificationContainer = getNotificationContainer();
+const $notificationContainer = typeof window !== 'undefined' ? getNotificationContainer() : null;
 
+const Notification = ({ type, message, onClose, autoClose = false }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const onCloseButtonClicked = useCallback(() => {
@@ -27,7 +26,7 @@ const Notification = ({type, children, onClose, autoClose}) => {
 
   useEffect(() => {
     if(isClosing) {
-      const timeoutId = setTimeout(onClose, DELETE_TIME_IN_MS);
+      const timeoutId = setTimeout(onClose, CLOSING_PERIOD_IN_MS);
       return () => {
         clearTimeout(timeoutId);
       }
@@ -36,7 +35,7 @@ const Notification = ({type, children, onClose, autoClose}) => {
 
   useEffect(() => {
     if(autoClose) {
-      const timeoutId = setTimeout(onCloseButtonClicked, AUTO_DELETE_TIME_IN_MS);
+      const timeoutId = setTimeout(onCloseButtonClicked, AUTO_CLOSING_PERIOD_IN_MS);
       return () => {
         clearTimeout(timeoutId);
       }
@@ -44,29 +43,19 @@ const Notification = ({type, children, onClose, autoClose}) => {
   }, [autoClose, onCloseButtonClicked]);
 
   return createPortal(
-    <div className={classNames(
-      styles.Notification,
-      {
-        [styles.slideIn]: !isClosing,
-        [styles.slideOut]: isClosing
-      }
-    )}>
-      <div className={classNames(
-        styles.typeIcon,
+    <div className={classNames('bg-white flex gap-2 items-center p-2 shadow-lg rounded transition-all duration-300 ease-in-out',
         {
-          [styles.info]: type === NOTIFICATION_TYPE.INFO,
-          [styles.success]: type === NOTIFICATION_TYPE.SUCCESS,
-          [styles.error]: type === NOTIFICATION_TYPE.ERROR,
+          'animate-slide-in' : !isClosing,
+          '-translate-y-full opacity-0': isClosing
         }
       )}>
-        {type === NOTIFICATION_TYPE.INFO && <IoInformationCircle />}
-        {type === NOTIFICATION_TYPE.SUCCESS && <IoCheckmarkCircle />}
-        {type === NOTIFICATION_TYPE.ERROR && <IoAlertCircle />}
-      </div>
       <div>
-        {children}
+        {type === NOTIFICATION_TYPE.INFO && <IoInformationCircle className="text-blue-500" />}
+        {type === NOTIFICATION_TYPE.SUCCESS && <IoCheckmarkCircle className="text-green-500" />}
+        {type === NOTIFICATION_TYPE.ERROR && <IoAlertCircle className="text-red-500" />}
       </div>
-      <button className={styles.closeButton} onClick={onCloseButtonClicked}>
+      <p className="grow">{message}</p>
+      <button className="rounded-full hover:bg-gray-300" onClick={onCloseButtonClicked}>
         <IoCloseOutline />
       </button>
     </div>,
