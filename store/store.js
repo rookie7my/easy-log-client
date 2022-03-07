@@ -1,8 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 
+import notificationReducer from '../reducers/notificationsSlice';
+
 const store = configureStore({
-  reducer: (state = {}, action) => state,
-  devTools: true,
+  reducer: {
+    notifications: notificationReducer
+  }
 });
 
 export default store;
