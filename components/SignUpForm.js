@@ -53,6 +53,20 @@ const SignUpForm = () => {
         message: '계정이 생성되었습니다. 로그인 해주세요.',
         isAutoClose: true
       });
+    },
+    onError: (error) => {
+      if(error.response) {
+        const { errorMessage } = error.response.data;
+        addNotification({
+          type: NOTIFICATION_TYPE.ERROR,
+          message: errorMessage,
+          isAutoClose: true
+        });
+      } else if(error.request) {
+        console.log(error.request);
+      } else {
+        console.log('Error', error.message);
+      }
     }
   });
 
