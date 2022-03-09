@@ -2,10 +2,13 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { useRouter } from 'next/router';
+import { useMutation } from 'react-query';
 
 import FormMessage from './FormMessage';
 import Modal from './Modal';
 import useValidatedFormFields, { FORM_FIELD_ERROR_TYPE } from '../hooks/useValidatedFormFields';
+import useNotifications from '../hooks/useNotifications';
+import { NOTIFICATION_TYPE } from './Notifications/Notification';
 
 const PASSWORD_AND_PASSWORD_CHECK_DIFFERENT = 'passwordAndPasswordCheckDifferent';
 
@@ -32,8 +35,26 @@ const errorMessages = Object.freeze({
   }
 });
 
+async function signUp({ username, email, password }) {
+  const response = await axios.post('/api/users', { username, email, password });
+  return response.data;
+}
+
 const SignUpForm = () => {
   const router = useRouter();
+
+  const { addNotification } = useNotifications();
+
+  const signUpMutation = useMutation(signUp, {
+    onSuccess: () => {
+      router.push('/login');
+      addNotification({
+        type: NOTIFICATION_TYPE.SUCCESS,
+        message: '계정이 생성되었습니다. 로그인 해주세요.',
+        isAutoClose: true
+      });
+    }
+  });
 
   const [errorMessageOnModal, setErrorMessageOnModal] = useState('');
 
@@ -53,14 +74,9 @@ const SignUpForm = () => {
   });
 
   const onSignUpFormSubmitted = onFormSubmitted(
-     async fieldValues => {
+     fieldValues => {
         const { username, email, password } = fieldValues;
-        try {
-          const response = await axios.post('/api/users', { username, email, password });
-          router.push('/');
-        } catch (error) {
-          console.log(error);
-        }
+        signUpMutation.mutate({ username, email, password });
      },
     mainFieldError => {
        setErrorMessageOnModal(mainFieldError.fieldError[0].errorMessage);
@@ -144,6 +160,7 @@ const SignUpForm = () => {
           }
         </div>
         <button
+          disabled={signUpMutation.isLoading}
           type="submit"
           className="bg-blue-500 rounded p-2 text-white w-full"
         >

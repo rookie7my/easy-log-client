@@ -1,6 +1,19 @@
 import { rest } from 'msw';
+import { db } from './model';
+
+const DELAY_MS = 800;
 
 export const handlers = [
+  rest.post('/api/users', (req, res, ctx) => {
+    const { username, email, password } = req.body;
+    const { username: createdUsername } = db.user.create({ username, email, password });
+
+    return res(
+      ctx.status(201),
+      ctx.delay(DELAY_MS),
+      ctx.json({ username: createdUsername })
+    );
+  }),
   rest.get('/api/currentUser', (req, res, ctx) => {
     const { username } = JSON.parse(localStorage.getItem('current-user') ?? '{}');
     const isLoggedIn = !!username;
@@ -10,13 +23,6 @@ export const handlers = [
     return res(
       ctx.status(200),
       ctx.json(response)
-    );
-  }),
-  rest.post('/api/users', (req, res, ctx) => {
-    const { username, email, password } = req.body;
-    localStorage.setItem(email, JSON.stringify({ username, email, password }));
-    return res(
-      ctx.status(201)
     );
   }),
   rest.post('/api/users/login', (req, res, ctx) => {
