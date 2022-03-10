@@ -3,6 +3,13 @@ import { db } from './model';
 
 const DELAY_MS = 800;
 
+const testUser = {
+  username: 'test-user',
+  email: 'test@test.com',
+  password: '12341234!aA'
+};
+db.user.create(testUser);
+
 export const handlers = [
   rest.post('/api/users', (req, res, ctx) => {
     const { username, email, password } = req.body;
@@ -65,39 +72,46 @@ export const handlers = [
     );
   }),
   rest.get('/api/currentUser', (req, res, ctx) => {
-    const { username } = JSON.parse(localStorage.getItem('current-user') ?? '{}');
-    const isLoggedIn = !!username;
-    const response = { isLoggedIn };
-    if(isLoggedIn) response.username = username;
+    const username = localStorage.getItem('mock-auth-current-user') ?? '';
+    const isLoggedIn = username !== '';
 
     return res(
       ctx.status(200),
-      ctx.json(response)
+      ctx.json({ username, isLoggedIn })
     );
   }),
-  rest.post('/api/users/login', (req, res, ctx) => {
+  rest.post('/api/login', (req, res, ctx) => {
     const { email, password } = req.body;
-    const userInfo = localStorage.getItem(email);
-    const responseOnEmailOrPasswordInvalid = {
-      code: 'U003',
-      errorMessage: '이메일 또는 비밀번호가 올바르지 않습니다',
-      errors: []
-    };
-    if(userInfo === null) {
+    const userFoundByEmailAndPassword = db.user.findFirst({
+      where: {
+        email: {
+          equals: email
+        },
+        password: {
+          equals: password
+        }
+      }
+    });
+    if(userFoundByEmailAndPassword === null) {
       return res(
         ctx.status(401),
-        ctx.json(responseOnEmailOrPasswordInvalid)
+        ctx.delay(DELAY_MS),
+        ctx.json({
+          code: 'U003',
+          errorMessage: '이메일 또는 비밀번호가 올바르지 않습니다.',
+          errors: []
+        })
       );
     }
-    const { email: foundEmail, password: foundPassword, username } = JSON.parse(userInfo);
-    if(email === foundEmail && password === foundPassword) {
-      localStorage.setItem('current-user', JSON.stringify({ username }));
-      return res(ctx.status(200));
-    } else {
-      return res(
-        ctx.status(401),
-        ctx.json(responseOnEmailOrPasswordInvalid)
-      );
-    }
+    localStorage.setItem('mock-auth-current-user', userFoundByEmailAndPassword.username);
+
+    return res(
+      ctx.status(200),
+      ctx.delay(DELAY_MS),
+      ctx.json({
+        isLoggedIn: true,
+        username: userFoundByEmailAndPassword.username
+      })
+    );
   })
 ];

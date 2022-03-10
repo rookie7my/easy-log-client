@@ -6,7 +6,9 @@ import axios from 'axios';
 
 import FormMessage from "./FormMessage";
 import Modal from './Modal';
-import useValidatedFormFields, {FORM_FIELD_ERROR_TYPE} from '../hooks/useValidatedFormFields';
+import useValidatedFormFields, { FORM_FIELD_ERROR_TYPE } from '../hooks/useValidatedFormFields';
+import useNotifications from '../hooks/useNotifications';
+import { NOTIFICATION_TYPE } from './Notifications/Notification';
 
 const errorMessages = {
   email: {
@@ -22,12 +24,29 @@ const LoginForm = () => {
 
   const queryClient = useQueryClient();
 
-  const loginMutation = useMutation(({ email, password }) => {
-    return axios.post('/api/users/login', { email, password });
+  const { addNotification } = useNotifications();
+
+  const loginMutation = useMutation(async({ email, password }) => {
+    const response = await axios.post('/api/login', { email, password });
+    return response.data;
   }, {
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries('currentUser');
-      router.push('/');
+      router.push(`/@${data.username}`);
+    },
+    onError: (error) => {
+      if (error.response) {
+        const { errorMessage } = error.response.data;
+        addNotification({
+          type: NOTIFICATION_TYPE.ERROR,
+          message: errorMessage,
+          isAutoClose: true
+        });
+      } else if(error.request) {
+        console.log(error.request);
+      } else {
+        console.log(error.message);
+      }
     }
   });
 
@@ -92,6 +111,7 @@ const LoginForm = () => {
           }
         </div>
         <button
+          disabled={loginMutation.isLoading}
           type="submit"
           className="bg-blue-500 rounded p-2 text-white w-full"
         >
