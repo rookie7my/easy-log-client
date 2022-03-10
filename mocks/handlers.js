@@ -113,5 +113,14 @@ export const handlers = [
         username: userFoundByEmailAndPassword.username
       })
     );
+  }),
+  rest.post('/api/logout', (req, res, ctx) => {
+    localStorage.removeItem('mock-auth-current-user');
+
+    return res(
+      ctx.status(200),
+      ctx.delay(DELAY_MS),
+      ctx.json({ isLoggedIn: false })
+    );
   })
 ];
